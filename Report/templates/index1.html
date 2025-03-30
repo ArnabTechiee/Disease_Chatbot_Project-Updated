@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles1.css') }}" />
+    <title>Disease Info Finder</title>
+</head>
+<body>
+
+<div class="container">
+    <h1>Disease Information Finder</h1>
+
+    <!-- Input for Name -->
+    <input type="text" id="nameInput" placeholder="Enter your name..." />
+
+    <!-- Input for Disease -->
+    <input type="text" id="diseaseInput" placeholder="Enter disease name..." />
+
+    <button onclick="fetchDiseaseInfo()">Search</button>
+    <button onclick="downloadReport()" id="downloadButton" style="display:none;">Download Report</button>
+
+    <div id="result"></div>
+</div>
+
+<script src="{{ url_for('static', filename='script1.js') }}"></script>
+</body>
+</html>

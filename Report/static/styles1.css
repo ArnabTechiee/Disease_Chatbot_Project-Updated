@@ -1,0 +1,113 @@
+/* General Styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+/* Container Styling */
+.container {
+    width: 90%;
+    max-width: 600px;
+    margin: 50px auto;
+    text-align: center;
+}
+
+/* Heading */
+h1 {
+    color: #2c3e50;
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+/* Input and Button Styling */
+input, button {
+    padding: 12px;
+    margin: 10px 0;
+    width: 80%;
+    max-width: 500px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+    box-sizing: border-box;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    border-color: #5cb85c;
+    box-shadow: 0 0 8px rgba(92, 184, 92, 0.3);
+}
+
+button {
+    background-color: #5cb85c;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #4cae4c;
+}
+
+#downloadButton {
+    background-color: #3498db;
+}
+
+#downloadButton:hover {
+    background-color: #2980b9;
+}
+
+/* Result Styling */
+#result {
+    margin-top: 20px;
+    text-align: left;
+}
+
+.result-card {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+    margin-top: 10px;
+    border-left: 5px solid #5cb85c;
+    transition: transform 0.3s ease;
+}
+
+.result-card h2 {
+    color: #2c3e50;
+    font-size: 24px;
+    margin-bottom: 12px;
+}
+
+.result-card p {
+    font-size: 16px;
+    color: #555;
+    line-height: 1.6;
+}
+
+/* Error Message Styling */
+.error {
+    color: #e74c3c;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    input, button {
+        width: 100%;
+    }
+
+    .result-card h2 {
+        font-size: 20px;
+    }
+
+    .result-card p {
+        font-size: 14px;
+    }
+}
