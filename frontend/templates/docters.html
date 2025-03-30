@@ -1,0 +1,101 @@
+<!-- dashboard.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        /* Add some styling */
+        .message-container {
+            margin-bottom: 20px;
+        }
+        .message {
+            margin: 5px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome, {{ username }}!</h1>
+
+    <div id="chatbot">
+        <div class="message-container" id="chatbot-messages">
+            <!-- Messages will be displayed here -->
+        </div>
+
+        <input type="text" id="user-message" placeholder="Ask a question...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <div id="doctor-search">
+        <h2>Find a Doctor</h2>
+        <input type="text" id="symptom" placeholder="Enter a symptom...">
+        <button onclick="getDoctors()">Search</button>
+        <div id="doctor-list">
+            <!-- Doctor list will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        // Function to send message to chatbot
+        function sendMessage() {
+            const message = $('#user-message').val();
+
+            if (message) {
+                // Display user message
+                $('#chatbot-messages').append('<div class="message user-message">' + message + '</div>');
+
+                // Send message to backend
+                $.ajax({
+                    url: '/get_response',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ message: message }),
+                    success: function (response) {
+                        // Display chatbot's response
+                        $('#chatbot-messages').append('<div class="message bot-message">' + response.response + '</div>');
+                        $('#user-message').val(''); // Clear input
+                    },
+                    error: function () {
+                        $('#chatbot-messages').append('<div class="message bot-message">Error occurred. Please try again later.</div>');
+                    }
+                });
+            }
+        }
+
+        // Function to search for doctors based on a symptom
+        function getDoctors() {
+            const symptom = $('#symptom').val();
+
+            if (symptom) {
+                // Send symptom to backend to get doctor suggestions
+                $.ajax({
+                    url: '/get-doctors',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ symptom: symptom }),
+                    success: function (response) {
+                        if (response.doctors) {
+                            let doctorList = '<ul>';
+                            response.doctors.forEach(function (doctor) {
+                                doctorList += `<li>${doctor.name} - ${doctor.specialization}</li>`;
+                            });
+                            doctorList += '</ul>';
+                            $('#doctor-list').html(doctorList);
+                        } else {
+                            $('#doctor-list').html('<p>No doctors found for this symptom.</p>');
+                        }
+                    },
+                    error: function () {
+                        $('#doctor-list').html('<p>Error occurred. Please try again later.</p>');
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

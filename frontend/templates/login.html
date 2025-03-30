@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | AI Medical Assistant</title>
+
+    <style>
+        /* ✅ Global Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(to right, #74ebd5, #acb6e5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .auth-container {
+            width: 100%;
+            max-width: 380px;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .error-message {
+            background: #ffdddd;
+            color: #d9534f;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s ease-in-out;
+        }
+
+        input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 6px rgba(0, 123, 255, 0.3);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-group input {
+            margin-right: 8px;
+            width: 16px; /* Ensures checkbox is properly sized */
+            height: 16px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0px 5px 10px rgba(0, 123, 255, 0.3);
+        }
+
+        .auth-footer {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .auth-footer a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .auth-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h2>Welcome Back</h2>
+
+        {# ✅ Display error message if login fails #}
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('login') }}">
+            <!-- ✅ Username Field -->
+            <div class="form-group">
+                <input type="text" name="username" placeholder="Username" required />
+            </div>
+
+            <!-- ✅ Password Field with Toggle -->
+            <div class="form-group">
+                <input type="password" name="password" id="password" placeholder="Password" required />
+                <span class="toggle-password" onclick="togglePassword()">👁️</span>
+            </div>
+
+            <!-- ✅ Remember Me Checkbox -->
+            <div class="checkbox-group">
+                <input type="checkbox" id="remember-me" name="remember-me" />
+                <label for="remember-me">Remember me</label>
+            </div>
+
+            <!-- ✅ Submit Button -->
+            <button type="submit" class="btn-primary">Login</button>
+        </form>
+
+        <!-- ✅ Forgot Password & Register Link -->
+        <p class="auth-footer">
+            <a href="#">Forgot password?</a> <br />
+            Don't have an account? <a href="{{ url_for('register') }}">Register here</a>
+        </p>
+    </div>
+
+    <!-- ✅ Password Toggle Script -->
+    <script>
+        function togglePassword() {
+            const passwordField = document.getElementById("password");
+            passwordField.type = passwordField.type === "password" ? "text" : "password";
+        }
+    </script>
+</body>
+</html>

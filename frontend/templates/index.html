@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Medical Assistant Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <script defer src="{{ url_for('static', filename='script.js') }}"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+</head>
+<body>
+
+<!-- ✅ Sidebar -->
+<div class="sidebar">
+    <h2>🏥 MedCare</h2>
+    <ul>
+        <li class="active"><i class="fas fa-home"></i> Dashboard</li>
+        <li id="medical-assistant-btn"><i class="fas fa-user-md"></i> Medical Assistant</li>
+        <li>
+            <a href="http://127.0.0.1:5000" target="_blank" style="color: white;">
+                <i class="fas fa-notes-medical"></i> Diagnosis Results
+            </a>
+        </li>
+        <li><i class="fas fa-user"></i> Find a Doctor</li>
+        <li><i class="fas fa-calendar-check"></i> Book Appointment</li>
+        <li><i class="fas fa-user-circle"></i> Profile</li>
+
+        <!-- ✅ Dynamic Authentication Handling -->
+        {% if username %}
+        <li>
+            <form id="logout-form" method="POST" action="{{ url_for('logout') }}">
+                <button type="submit" id="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </form>
+        </li>
+        {% else %}
+        <li>
+            <a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i> Login</a>
+        </li>
+        <li>
+            <a href="{{ url_for('register') }}"><i class="fas fa-user-plus"></i> Register</a>
+        </li>
+        {% endif %}
+    </ul>
+</div>
+
+<!-- ✅ Main Content -->
+<div class="main-content">
+    <!-- ✅ Navbar -->
+    <div class="navbar">
+        <input type="text" placeholder="Search for doctors, reports..." id="searchBox" />
+        <button id="darkModeToggle"><i class="fas fa-moon"></i></button>
+        <span class="notification"><i class="fas fa-bell"></i></span>
+
+        <!-- ✅ Profile Section (Only Show When Logged In) -->
+        {% if username %}
+        <span class="profile">
+            {{ username }} <small>User</small>
+            <img src="{{ url_for('static', filename='profile.jpg') }}" alt="Profile" class="profile-img" />
+        </span>
+        {% endif %}
+    </div>
+
+    <!-- ✅ Dashboard Content -->
+    <div class="content">
+        {% if username %}
+        <h1>Welcome, {{ username }}!</h1>
+        <p>Manage your health with MedCare AI Assistant.</p>
+        {% else %}
+        <h1>Welcome to MedCare!</h1>
+        <p>Please <a href="{{ url_for('login') }}">login</a> or <a href="{{ url_for('register') }}">register</a> to access features.</p>
+        {% endif %}
+
+        <div class="dashboard-cards">
+            <div class="card">
+                <i class="fas fa-stethoscope"></i>
+                <h3>AI Diagnosis</h3>
+                <p>Get personalized health analysis.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-user-md"></i>
+                <h3>Find a Doctor</h3>
+                <p>Consult with experienced professionals.</p>
+            </div>
+            <div class="card">
+                <i class="fas fa-notes-medical"></i>
+                <h3>Health Reports</h3>
+                <p>Track your medical history.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ Overlay -->
+<div class="overlay" id="overlay"></div>
+
+<!-- ✅ Chatbot Modal -->
+<div class="chat-container" id="chat-container">
+    <header>
+        <div>
+            <h1>🩺 AI Medical Assistant</h1>
+            <p>Your AI-powered health advisor</p>
+        </div>
+        <button id="close-chat" aria-label="Close">&times;</button>
+    </header>
+
+    <div class="chat-box" id="chat-box">
+        <div class="bot-message">
+            <span class="bot-icon">🤖</span>
+            Hello! I’m your AI health assistant. How can I help you today?
+        </div>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="Describe your symptoms..." aria-label="User message" />
+        <button id="send-btn" aria-label="Send message">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+</div>
+
+<!-- ✅ Doctor Consultation Popup -->
+<div class="popup-container" id="doctor-popup">
+    <div class="popup-content">
+        <span class="close-popup" id="close-popup">&times;</span>
+        <h2>Reach out to your nearest clinic</h2>
+        <ul>
+            <li><a href="https://www.apollo247.com/specialties" target="_blank">Apollo</a></li>
+            <li><a href="https://www.practo.com" target="_blank">Practo</a></li>
+            <li><a href="https://www.googleadservices.com/pagead/aclk?sa=L&ai=DChcSEwj3qpvMxZWMAxVzuksFHSEHB2gYABAAGgJzZg&co=1&gclid=Cj0KCQjws-S-BhD2ARIsALssG0YhY8Mwa053MtpTsNrdF03dgOl7alN3ZX_eQCkuSooPpQVRSlrWR6MaAlXAEALw_wcB&ohost=www.google.com&cid=CAESVuD2a49hvhu5-IZnJn_fyQ_6XJ84SN6iRn_pFhfv2MYSnNWReZ6euRsyIUeoicGvjsRVaAJBj7Bz0IlAnkrF-qWGPyI-N2pFm_zVM31IS92AMV1BwRn5&sig=AOD64_3_QJGHTQw9xPtXWm6wbWH7HlR5hw&q&adurl&ved=2ahUKEwj_i5TMxZWMAxWBU2wGHbC-GywQ0Qx6BAgJEAE" target="_blank">Manipal</a></li>
+            <li><a href="https://www.booknmeet.com/" target="_blank">Booknmeet</a></li>
+            <li><a href="https://ors.gov.in/" target="_blank">ORS</a></li>
+            <li><a href="https://www.skedoc.com/" target="_blank">Skedoc</a></li>
+            <li><a href="https://www.maxhealthcare.in/book-an-appointment" target="_blank">MAX Healthcare</a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- ✅ Overlay for popup -->
+<div class="popup-overlay" id="popup-overlay"></div>
+
+<!-- ✅ Logout Script -->
+<script>
+    document.getElementById('logout-form')?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const response = await fetch('/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (response.ok) {
+            window.location.href = '/login';
+        }
+    });
+</script>
+
+</body>
+</html>
