@@ -1,142 +1,73 @@
-import os
-import faiss
 import pandas as pd
 import joblib
-import numpy as np
-from sentence_transformers import SentenceTransformer
-import re
+from imblearn.over_sampling import SMOTE
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from xgboost import XGBClassifier
+from sklearn.metrics import accuracy_score
 
-# 📌 Load dataset paths
-current_dir = os.path.dirname(os.path.abspath(_file_))
-data_path = os.path.join(current_dir, "..", "data")
-model_path = os.path.join(current_dir, "..", "models")
-faiss_index_path = os.path.join(model_path, "faiss_index.idx")
+# 📌 Load the dataset
+df = pd.read_csv("data/Disease_symptom_and_patient_profile_dataset.csv")
 
-# 📌 Load dataset
-file_path = os.path.join(data_path, "medquad.csv")
-if not os.path.exists(file_path):
-    raise FileNotFoundError(f"⚠ ERROR: File '{file_path}' not found! Place it in 'data/'.")
+# 📌 Remove rare diseases (less than 2 instances)
+disease_counts = df["Disease"].value_counts()
+df = df[df["Disease"].isin(disease_counts[disease_counts > 1].index)]
 
-df = pd.read_csv(file_path, usecols=["question", "answer"])
-if df.empty:
-    raise ValueError(f"⚠ ERROR: File '{file_path}' is empty or corrupt.")
+# 📌 Convert "Yes"/"No" to numerical values (Fixed FutureWarning)
+symptom_cols = ["Fever", "Cough", "Fatigue", "Difficulty Breathing"]
+df[symptom_cols] = df[symptom_cols].replace({"No": 0, "Yes": 1}).infer_objects(copy=False).astype(int)
 
-questions = df["question"].tolist()
-answers = df["answer"].tolist()
+# 📌 Prepare feature and target columns
+X = df.drop(columns=["Disease", "Outcome Variable"])
+y = df["Disease"]
 
-# 📌 Load Sentence Transformer Model
-embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+# 📌 Convert categorical values into numbers
+X = pd.get_dummies(X, columns=["Gender", "Blood Pressure", "Cholesterol Level"], drop_first=True)
 
-# ✅ Faster FAISS loading (Precompute embeddings)
-if os.path.exists(faiss_index_path):
-    index = faiss.read_index(faiss_index_path)
-else:
-    print("🛠 Generating FAISS index for medical Q&A...")
-    embeddings = embedding_model.encode(questions, show_progress_bar=True)
-    index = faiss.IndexFlatL2(embeddings.shape[1])
-    index.add(embeddings)
-    faiss.write_index(index, faiss_index_path)
+# 📌 Encode disease names into numerical labels
+label_encoder = LabelEncoder()
+y_encoded = label_encoder.fit_transform(y)
 
-# 📌 Load trained XGBoost model & Label Encoder
-disease_model = joblib.load(os.path.join(model_path, "xgboost_disease_model.pkl"))
-label_encoder = joblib.load(os.path.join(model_path, "label_encoder.pkl"))
+# 📌 Print class distribution before SMOTE
+print("✅ Class distribution before SMOTE:\n", pd.Series(y_encoded).value_counts())
 
-# ✅ Predefined Symptom List
-SYMPTOM_LIST = [
-    "fever", "cough", "fatigue", "sore throat", "runny nose", "headache",
-    "chest pain", "difficulty breathing", "nausea", "vomiting", "diarrhea",
-    "joint pain", "rash", "dizziness", "loss of taste", "loss of smell",
-    "stomach pain", "sweating", "muscle pain", "sneezing"
-]
+# 📌 Apply SMOTE with k_neighbors=1 (Fixed Error)
+try:
+    smote = SMOTE(sampling_strategy="auto", k_neighbors=1, random_state=42)
+    X_resampled, y_resampled = smote.fit_resample(X, y_encoded)
+    print("✅ SMOTE applied successfully!")
+except ValueError as e:
+    print("⚠ Skipping SMOTE due to insufficient samples:", e)
+    X_resampled, y_resampled = X, y_encoded  # Use original dataset if SMOTE fails
 
-def extract_symptoms(user_input):
-    """🚀 Extract symptoms using keyword matching (No API)"""
-    detected = [symptom for symptom in SYMPTOM_LIST if re.search(rf"\b{symptom}\b", user_input.lower())]
-    return detected
+# 📌 Print class distribution after applying SMOTE
+print("✅ Class distribution after SMOTE:\n", pd.Series(y_resampled).value_counts())
 
-def medical_chatbot():
-    """💬 Interactive AI Medical Chatbot with User Profile-Based Diagnosis"""
-    print("\n🤖 Chatbot: Hi there! I'm your medical assistant. Let's start by understanding your health profile.")
+# 📌 Split dataset into training & testing sets (80% train, 20% test)
+X_train, X_test, y_train, y_test = train_test_split(X_resampled, y_resampled, test_size=0.2, random_state=42, stratify=y_resampled)
 
-    # 🔹 Step 1: Collect User Profile
-    while True:
-        user_age = input("👤 You: How old are you? ").strip()
-        if user_age.isdigit():
-            user_age = int(user_age)
-            break
-        print("🤖 Chatbot: Please enter a valid number for your age.")
+# 📌 Train the XGBoost model with optimized parameters
+model = XGBClassifier(
+    eval_metric="mlogloss",
+    objective="multi:softmax",
+    num_class=len(label_encoder.classes_),
+    learning_rate=0.05,  # Lower learning rate for better convergence
+    max_depth=8,  # Deeper trees for better learning
+    n_estimators=500,  # More estimators for improved accuracy
+    subsample=0.9,  # More data used for training
+    colsample_bytree=0.9,  # Better feature selection
+)
 
-    while True:
-        user_gender = input("👤 You: What is your gender? (Male/Female) ").strip().lower()
-        if user_gender in ["male", "female"]:
-            break
-        print("🤖 Chatbot: Please enter either 'Male' or 'Female'.")
+model.fit(X_train, y_train)
 
-    user_medical_history = input("👤 You: Do you have any pre-existing conditions (e.g., diabetes, hypertension)? If none, type 'No'. ").strip().lower()
+# 📌 Evaluate the model
+y_pred = model.predict(X_test)
+accuracy = accuracy_score(y_test, y_pred)
 
-    print("\n🤖 Chatbot: Thanks for sharing your health profile! Now, let's talk about your symptoms.")
+print(f"✅ Model Training Complete! Accuracy: {accuracy * 100:.2f}%")
 
-    detected_symptoms = []
-
-    # 🔹 Step 2: Collect Symptoms
-    while True:
-        user_input = input("👤 You: ").strip().lower()
-
-        if user_input in ["exit", "quit", "stop", "bye"]:
-            print("👋 Chatbot: Take care! Stay healthy. Exiting now.")
-            return
-
-        new_symptoms = extract_symptoms(user_input)
-
-        if new_symptoms:
-            detected_symptoms.extend(new_symptoms)
-            print(f"🤖 Chatbot: Hmm, I see {', '.join(new_symptoms)}. Anything else?")
-        else:
-            print("🤖 Chatbot: Could you describe your symptoms in more detail?")
-
-        if user_input in ["no", "nothing else", "that's all"]:
-            break
-
-    if not detected_symptoms:
-        print("\n🤖 Chatbot: I couldn't detect specific symptoms. Maybe try describing them differently?")
-        return
-
-    print("\n🤖 Chatbot: Alright, let me analyze your symptoms...")
-
-    # 🚀 Convert symptoms into DataFrame
-    feature_names = disease_model.get_booster().feature_names
-    user_data = np.zeros(len(feature_names))
-
-    for i, symptom in enumerate(feature_names):
-        if symptom in detected_symptoms:
-            user_data[i] = 1
-
-    input_df = pd.DataFrame([user_data], columns=feature_names)
-
-    # 🏥 Predict Disease (Multi-Disease Probability Mode)
-    prediction_proba = disease_model.predict_proba(input_df)[0]
-    top_indices = np.argsort(prediction_proba)[::-1][:3]  # ✅ Top 3 possible diseases
-
-    print("\n🩺 Chatbot: Based on your symptoms and health profile, here are the most likely conditions:")
-
-    for rank, idx in enumerate(top_indices, start=1):
-        disease_name = label_encoder.inverse_transform([idx])[0]
-        confidence = prediction_proba[idx] * 100
-        print(f"  {rank}. {disease_name} - {confidence:.2f}% confidence")
-
-    # 🏥 Find treatment using FAISS
-    top_disease = label_encoder.inverse_transform([top_indices[0]])[0]
-    query_embedding = embedding_model.encode([f"What is the treatment for {top_disease}?"])
-    _, top_match = index.search(query_embedding, 1)
-    treatment = answers[top_match[0][0]]
-
-    query_embedding = embedding_model.encode([f"What precautions should I take for {top_disease}?"])
-    _, top_match = index.search(query_embedding, 1)
-    precautions = answers[top_match[0][0]]
-
-    print("\n📌 Treatment Advice:", treatment)
-    print("⚠ Precautions You Should Take:", precautions)
-
-    # 🔥 *Final Diagnosis Statement*
-    print(f"\n🩺 *Final Diagnosis:* Based on my analysis, you are most likely suffering from *{top_disease}*.")
-    print("🤖 Chatbot: If symptoms persist, please consult a doctor for a professional diagnosis.")
+# 📌 Save the trained model and label encoder
+joblib.dump(model, "models/xgboost_disease_model.pkl")
+joblib.dump(label_encoder, "models/label_encoder.pkl")  # Save label encoder for chatbot use
+print("📌 Model saved as 'models/xgboost_disease_model.pkl'")
+print("📌 Label encoder saved as 'models/label_encoder.pkl'")
